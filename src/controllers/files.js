@@ -5,6 +5,14 @@ const supabaseUrl = 'https://fjjrxhcerjjthjglqptp.supabase.co'
 const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImZqanJ4aGNlcmpqdGhqZ2xxcHRwIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTY5MzUyNjQ2NywiZXhwIjoyMDA5MTAyNDY3fQ.aJ54McCK2fK2Oac-hmGkXWfXZHYy5AiQ4GC_-W5ze8Y'
 const supabase = createClient(supabaseUrl, supabaseKey)
 
+let projectId = "red-seeker-365622"; // Google Cloud - consultar esto
+let keyFilename = "./red-seeker-365622-b037b7220de8.json"; // Google Cloud -> Credentials -> Service Accounts
+const storage = new Storage({
+  projectId,
+  keyFilename,
+});
+const bucket = storage.bucket("comunidadstorage"); // Cloud -> Storage
+
 
 async function renameFile(srcFileName, destFileName) {
   await supabase
