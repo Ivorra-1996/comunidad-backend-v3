@@ -1,23 +1,30 @@
 import express from 'express';
 import {
-  getConFiltros,
-  getPorId,
+  getOfertasPorFiltros,
+  getIdOferta,
   getOfertasPorIdEmpresa,
-  postOfertas,
+  createOferta,
   deleteOferta,
   updateOfertas,
-  getPeladas
+  getOfertas
 } from '../controllers/ofertas';
 import { withErrorHandling } from './utils';
-import { validateToken } from '../middlewares/validador';
 
 const router = express.Router();
 
-router.get('/', withErrorHandling(getConFiltros));
-router.get('/all/', withErrorHandling(getPeladas));
-router.get('/idOferta/:id', withErrorHandling(getPorId));
+// Obtener todas las ofertas
+router.get('/all/', withErrorHandling(getOfertas));
+// Obtener una oferta por ID
+router.get('/:id', withErrorHandling(getIdOferta));
+// Obtener ofertas filtradas
+router.get('/', withErrorHandling(getOfertasPorFiltros));
+// Obtener ofertas por ID de empresa
 router.get('/cuit/:id', withErrorHandling(getOfertasPorIdEmpresa));
-router.post('/',validateToken, withErrorHandling(postOfertas));
-router.delete('/idOferta/:id',validateToken, withErrorHandling(deleteOferta));
-router.put('/idOferta/:id',validateToken, withErrorHandling(updateOfertas));
+// Crear una nueva oferta
+router.post('/', withErrorHandling(createOferta));
+// Actualizar una oferta por ID
+router.put('/idOferta/:id', withErrorHandling(updateOfertas));
+// Eliminar una oferta por ID
+router.delete('/idOferta/:id', withErrorHandling(deleteOferta));
+
 export default router;

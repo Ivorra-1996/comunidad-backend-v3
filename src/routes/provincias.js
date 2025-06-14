@@ -1,12 +1,13 @@
 import express from 'express';
 import {
-  getConFiltros
+  getConFiltros,
+  getProvinciaById
 } from '../controllers/provincias';
 import { withErrorHandling } from './utils';
-import { validateToken } from '../middlewares/validador';
 
 const router = express.Router();
 
-router.get('/', withErrorHandling(getConFiltros));
+router.get('/', withErrorHandling(getConFiltros))
+      .get('/:id', withErrorHandling(getProvinciaById));
 
 export default router;

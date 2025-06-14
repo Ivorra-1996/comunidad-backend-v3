@@ -1,12 +1,19 @@
 import express from 'express';
 import {
-  getAll
+  createContrato,
+  getAll,
+  getContratoById,
+  updateContratoById,
+  deleteContratoById
 } from '../controllers/contratos';
 import { withErrorHandling } from './utils';
-import { validateToken } from '../middlewares/validador';
 
 const router = express.Router();
 
-router.get('/', withErrorHandling(getAll));
+router.post('/', withErrorHandling(createContrato));
+router.get('/', withErrorHandling(getAll))
+      .get('/:id', withErrorHandling(getContratoById));
+router.put('/:id', withErrorHandling(updateContratoById));
+router.delete('/:id', withErrorHandling(deleteContratoById));
 
 export default router;

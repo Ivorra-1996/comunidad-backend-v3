@@ -3,23 +3,23 @@ const {
   Model
 } = require('sequelize');
 module.exports = (sequelize, DataTypes) => {
-  class abm extends Model {
-    /**
-     * Helper method for defining associations.
-     * This method is not a part of Sequelize lifecycle.
-     * The `models/index` file will call this method automatically.
-     */
+  class abmModels extends Model {
+
     static associate(models) {
-      // define association here
+      abmModels.belongsTo(models.usuarios, {
+        as: 'usuario',
+        foreignKey: 'fk_id_usuario',
+        sourceKey: 'id',
+      });
     }
   }
-  abm.init({
+  abmModels.init({
     fk_id_usuario: DataTypes.INTEGER,
     id_usuario_mod: DataTypes.INTEGER,
     motivo: DataTypes.STRING
   }, {
     sequelize,
-    modelName: 'abm',
+    modelName: 'abmModels',
   });
-  return abm;
+  return abmModels;
 };

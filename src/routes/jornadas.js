@@ -1,12 +1,19 @@
 import express from 'express';
 import {
-  getAll
+  createJornada,
+  getAll,
+  getJornadaById,
+  updateJornada,
+  deleteJornada
 } from '../controllers/jornadas';
 import { withErrorHandling } from './utils';
-import { validateToken } from '../middlewares/validador';
 
 const router = express.Router();
 
-router.get('/', withErrorHandling(getAll));
+router.post('/', withErrorHandling(createJornada));
+router.get('/', withErrorHandling(getAll))
+      .get('/:id', withErrorHandling(getJornadaById));
+router.put('/:id', withErrorHandling(updateJornada));
+router.delete('/:id', withErrorHandling(deleteJornada));
 
 export default router;

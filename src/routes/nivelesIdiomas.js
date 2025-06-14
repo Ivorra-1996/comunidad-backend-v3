@@ -1,12 +1,19 @@
 import express from 'express';
 import {
-  getAll
+  createNivelIdioma,
+  getAll,
+  getNivelIdiomaById,
+  updateNivelIdioma,
+  deleteNivelIdioma
 } from '../controllers/nivelesIdiomas';
 import { withErrorHandling } from './utils';
-import { validateToken } from '../middlewares/validador';
 
 const router = express.Router();
 
-router.get('/', withErrorHandling(getAll));
+router.post('/', withErrorHandling(createNivelIdioma));
+router.get('/', withErrorHandling(getAll))
+      .get("/:id", withErrorHandling(getNivelIdiomaById));
+router.put('/:id', withErrorHandling(updateNivelIdioma));
+router.delete('/:id', withErrorHandling(deleteNivelIdioma));
 
 export default router;

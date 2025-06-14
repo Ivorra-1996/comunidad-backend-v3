@@ -14,8 +14,7 @@ module.exports = (sequelize, DataTypes) => {
     }
   }
   estudios.init({
-    nombre_estudio: DataTypes.STRING,
-    estado_estudio: DataTypes.STRING
+    nombre_estudio_estado: DataTypes.STRING
   }, {
     sequelize,
     modelName: 'estudios',

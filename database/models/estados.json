@@ -1,0 +1,28 @@
+{
+  "estados": [
+    {
+      "id": 1,
+      "estado": "Activo"
+    },
+    {
+      "id": 2,
+      "estado": "Observado"
+    },
+    {
+      "id": 3,
+      "estado": "Baja"
+    },
+    {
+      "id": 4,
+      "estado": "Pendiente"
+    },
+    {
+      "id": 5,
+      "estado": "Vencida"
+    },
+    {
+      "id": 6,
+      "estado": "Finalizada"
+    }
+  ]
+}

@@ -1,12 +1,18 @@
 import express from 'express';
 import {
-  getAll
+  createEstudio,
+  getAll,
+  getEstudioById,
+  updateEstudio,
+  deleteEstudio
 } from '../controllers/estudios';
 import { withErrorHandling } from './utils';
-import { validateToken } from '../middlewares/validador';
 
 const router = express.Router();
 
-router.get('/', withErrorHandling(getAll));
-
+router.post('/', withErrorHandling(createEstudio));
+router.get('/', withErrorHandling(getAll))
+      .get('/:id', withErrorHandling(getEstudioById));
+router.put('/:id', withErrorHandling(updateEstudio));
+router.delete('/:id', withErrorHandling(deleteEstudio));
 export default router;

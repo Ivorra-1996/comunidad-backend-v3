@@ -4,13 +4,19 @@ const {
 } = require('sequelize');
 module.exports = (sequelize, DataTypes) => {
   class aptitudes extends Model {
-    /**
-     * Helper method for defining associations.
-     * This method is not a part of Sequelize lifecycle.
-     * The `models/index` file will call this method automatically.
-     */
     static associate(models) {
-      // define association here
+      aptitudes.hasMany(models.aptitudes_postulantes// modelo al que pertenece
+      ,{
+        as : 'Aptitudes del postulante',  // nombre de mi relacion
+        foreignKey: 'fk_id_aptitud'     // campo con el que voy a igualar
+      }
+    );
+    aptitudes.hasMany(models.aptitudes_ofertas// modelo al que pertenece
+    ,{
+      as : 'Aptitudes de oferta',  // nombre de mi relacion
+      foreignKey: 'fk_id_aptitud'     // campo con el que voy a igualar
+    }
+  );
     }
   }
   aptitudes.init({

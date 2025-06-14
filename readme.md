@@ -1,8 +1,8 @@
 ## Como levantar el proyecto de forma local
 
-#### 1. Clonar el repo.
+#### 1. Clonar el repo/posicionate en tu directorio del proyecto por consola.
 
-#### 2. Instalamos los paquetes y dependencias.
+#### 2. Instalamos los paquetes y dependencias .
 
 ```
 npm i
@@ -16,7 +16,7 @@ npm i
 psql --version
 ```
 
-> Si ya tenemos una versión instalada no hace falta volver a hacerlo.
+> Si ya tienes PostgreSQL instalado, no es necesario volver a hacerlo. Puedes descargarlo manualmente si es necesario. Ten en cuenta que, incluso si tienes PostgreSQL instalado, es posible que los comandos no funcionen correctamente en tu consola. En ese caso, es necesario configurar las variables de entorno en Windows para solucionar este problema.
 
 ##### MacOS:
 
@@ -40,7 +40,7 @@ Instalamos Docker desde el siguiente link:
 
 [Docker Docs](https://docs.docker.com/engine/install/)
 
-Una vez instalado nos paramos en el directorio raíz del repo y ejecutamos:
+Una vez instalado nos paramos en el directorio raíz del repo de ser necesario y ejecutamos:
 
 ```
 docker-compose up -d
@@ -48,29 +48,21 @@ docker-compose up -d
 
 #### 5. Creación de la base
 
-Nos conectamos a la base:
+Nos conectamos a la base mediante la consola:
 
 ```
 psql -h 127.0.0.1 -U postgres
 ```
 
-> contraseña: admin1234
-
+> tu contraseña de usuario postgres.
+```
+Ejemplo:
+constraseña: 1234
+```
 Creamos la base:
 
 ```
-CREATE DATABASE desarrollo;
-```
-Nos pasamos a la base:
-
-```
-\c desarrollo;
-```
-
-Cargamos los datos:
-
-```
-\i dump_base.sql;
+CREATE DATABASE unahur_desapp_dev;
 ```
 
 Salimos con:
@@ -78,8 +70,21 @@ Salimos con:
 ```
 \q;
 ```
+> Ahora podemos conectarnos asi: psql -h 127.0.0.1 -U postgres -d unahur_desapp_dev
 
-> Ahora podemos conectarnos asi: psql -h 127.0.0.1 -U postgres -d desarrollo
+Cargamos las migraciones y los datos:
+
+```
+Migraciones
+npx sequelize db:migrate -> sirve para migrar.
+npx sequelize db:migrate:undo:all -> sirve para desmigrar.
+```
+```
+Datos
+npx sequelize db:seed:all -> sembras la base.
+npx sequelize db:seed:undo:all -> dessembras la base.
+```
+
 
 #### 6. Environment
 

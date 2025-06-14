@@ -6,22 +6,21 @@ import {
   deleteEmpresa,
   postEmpresa,
   updateEmpresa,
-  getPeladas,
+  getEmpresas,
   patchEmpresa
 
 } from '../controllers/empresas';
 import { withErrorHandling } from './utils';
-import { validateToken } from '../middlewares/validador';
 
 const router = express.Router();
 
-router.get('/', withErrorHandling(getConFiltros));
-router.get('/all/', withErrorHandling(getPeladas));
-router.get('/cuit/:id', withErrorHandling(getPorId));
-router.get('/idUsuario/:id', withErrorHandling(getPorIdUsuario));
-router.delete('/cuit/:id', validateToken, withErrorHandling(deleteEmpresa));
 router.post('/', withErrorHandling(postEmpresa));
-router.put('/cuit/:id', validateToken, withErrorHandling(updateEmpresa));
+router.get('/', withErrorHandling(getConFiltros))
+      .get('/all/', withErrorHandling(getEmpresas))
+      .get('/cuit/:id', withErrorHandling(getPorId))
+      .get('/idUsuario/:id', withErrorHandling(getPorIdUsuario));
+router.put('/cuit/:id', withErrorHandling(updateEmpresa));
 router.patch('/cuit/:id', withErrorHandling(patchEmpresa));
+router.delete('/cuit/:id', withErrorHandling(deleteEmpresa));
 
 export default router;

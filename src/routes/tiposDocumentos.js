@@ -1,12 +1,20 @@
 import express from 'express';
 import {
-  getAll
+  getAll,
+  getById,
+  updateByIdController,
+  deleteById,
+  createTipoDocumento 
 } from '../controllers/tiposDocumentos';
 import { withErrorHandling } from './utils';
-import { validateToken } from '../middlewares/validador';
 
 const router = express.Router();
 
-router.get('/', withErrorHandling(getAll));
+router.post('/', withErrorHandling(createTipoDocumento));
+router.get('/', withErrorHandling(getAll))
+      .get('/:id', withErrorHandling(getById));
+router.put('/', withErrorHandling(updateByIdController));
+router.delete('/:id', withErrorHandling(deleteById));
+
 
 export default router;

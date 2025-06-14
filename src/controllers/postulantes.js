@@ -1,79 +1,37 @@
 const models = require("../../database/models");
 const { Op } = require("sequelize");
+// ... (importaciones)
 
 export const getConFiltros = async (req, res) => {
-  const paginaComoNumero = Number.parseInt(req.query.pagina);
-  const limiteComoNumero = Number.parseInt(req.query.limite);
-  let ordenarPor = req.query.ordenar;
-  let buscarPostulante = req.query.buscarPostulante;
+  try {
+    const paginaComoNumero = Number.parseInt(req.query.pagina);
+    const limiteComoNumero = Number.parseInt(req.query.limite);
+    let ordenarPor = req.query.ordenar;
+    let buscarPostulante = req.query.buscarPostulante;
 
-  //let buscarDNI = req.query.buscarDNI;
+    // Validar ordenarPor
+    const camposValidos = ["createdAt", "otroCampoValido"];
+    ordenarPor = camposValidos.includes(ordenarPor) ? ordenarPor : "createdAt";
 
-  let pagina = 0;
-  if (!Number.isNaN(paginaComoNumero) && paginaComoNumero > 0) {
-    pagina = paginaComoNumero;
-  }
+    const pagina = !Number.isNaN(paginaComoNumero) && paginaComoNumero > 0 ? paginaComoNumero : 0;
+    const limite = !Number.isNaN(limiteComoNumero) && limiteComoNumero > 0 ? limiteComoNumero : 30;
 
-  let limite = 30;
-  if (!Number.isNaN(limiteComoNumero) && limiteComoNumero > 0) {
-    limite = limiteComoNumero;
-  }
+    let [buscarNombre = "_", buscarApellido = "_"] = (buscarPostulante || "").split(" ", 2);
 
-  if (typeof ordenarPor === "undefined") {
-    ordenarPor = "createdAt";
-  }
+    if (typeof buscarApellido === "undefined") {
+      buscarApellido = buscarNombre;
+    }
 
-  let buscarNombre = "_"
-  let buscarApellido = "_"
-  if (typeof buscarPostulante !== "undefined"){
-    buscarNombre = req.query.buscarPostulante.split(" ",2)[0];
-    buscarApellido = req.query.buscarPostulante.split(" ",2)[1];
-  }
-
-  if (typeof buscarApellido === "undefined"){
-    buscarApellido = buscarNombre
-  }
-
-  models.postulantes
-    .findAndCountAll({
+    const postulantes = await models.postulantes.findAndCountAll({
       limit: limite,
       offset: pagina * limite,
       include: [
-        {
-          as: "Tipo_documento",
-          model: models.tipos_documentos,
-          attributes: ["id", "tipo_documento"],
-        },
         {
           as: "Usuario",
           model: models.usuarios,
           attributes: ["id", "usuario", "estado", "createdAt"],
         },
-        {
-          as: "Estudios",
-          model: models.estudios,
-          attributes: ["id", "nombre_estudio", "estado_estudio"],
-        },
-        {
-          as: "Carrera",
-          model: models.carreras,
-          attributes: ["id", "nombre_carrera"],
-        },
-        {
-          as: "Estado",
-          model: models.estado_postulantes,
-          attributes: ["id", "nombre_estado"],
-        },
-        {
-          as: "Provincia",
-          model: models.provincias,
-          attributes: ["id", "nombre"],
-        },
-        {
-          as: "Ciudad",
-          model: models.ciudades,
-          attributes: ["id", "nombre", "fk_id_provincia"],
-        },
+        // ... (otros includes)
       ],
       where: {
         [Op.or]: [
@@ -90,28 +48,26 @@ export const getConFiltros = async (req, res) => {
         ],
       },
       order: [ordenarPor],
-    })
-    .then((postulantes) =>
-      res.send({
-        postulantes,
-        totalPaginas: Math.ceil(postulantes.count / limite),
-      })
-    )
-    .catch(() => res.sendStatus(400));
+    });
+
+    res.send({
+      postulantes,
+      totalPaginas: Math.ceil(postulantes.count / limite),
+    });
+  } catch (error) {
+    console.error('Error al buscar postulantes:', error);
+    res.sendStatus(400);
+  }
 };
 
 const findPostulantesPorIdUsuario = (
   fk_id_usuario,
   { onSuccess, onNotFound, onError }
 ) => {
+  console.log('Buscando postulantes por ID de usuario:', fk_id_usuario);
   models.postulantes
     .findOne({
       include: [
-        {
-          as: "Tipo_documento",
-          model: models.tipos_documentos,
-          attributes: ["id", "tipo_documento"],
-        },
         {
           as: "Usuario",
           model: models.usuarios,
@@ -120,17 +76,12 @@ const findPostulantesPorIdUsuario = (
         {
           as: "Estudios",
           model: models.estudios,
-          attributes: ["id", "nombre_estudio", "estado_estudio"],
+          attributes: ["id", "nombre_estudio_estado"],
         },
         {
           as: "Carrera",
           model: models.carreras,
           attributes: ["id", "nombre_carrera"],
-        },
-        {
-          as: "Estado",
-          model: models.estado_postulantes,
-          attributes: ["id", "nombre_estado"],
         },
         {
           as: "Provincia",
@@ -142,6 +93,17 @@ const findPostulantesPorIdUsuario = (
           model: models.ciudades,
           attributes: ["id", "nombre", "fk_id_provincia"],
         },
+        {
+          as: "Idiomas",
+          model: models.idiomas_postulantes,
+          include: [
+            {
+              as: "Idiomas del postulante",
+              model: models.idiomas,
+              attributes: ["id", "nombre_idioma", "nivel_oral", "nivel_escrito"],
+            },
+          ],
+        }
       ],
 
       where: { fk_id_usuario },
@@ -149,29 +111,24 @@ const findPostulantesPorIdUsuario = (
     .then((postulantes) =>
       postulantes ? onSuccess(postulantes) : onNotFound()
     )
-    .catch(() => onError());
+    .catch((error) => {
+      console.error('Error al buscar postulantes:', error);
+      onError();
+    });
 };
 
 export const getPorIdUsuario = async (req, res) => {
   findPostulantesPorIdUsuario(req.params.id, {
     onSuccess: (postulantes) => res.send(postulantes),
-    onNotFound: () => res.sendStatus(401),
-    onError: () => res.sendStatus(400),
+    onNotFound: () => res.sendStatus(404),
+    onError: () => res.sendStatus(500),
   });
 };
 
-const findPostulantesPorDNI = (
-  id,
-  { onSuccess, onNotFound, onError }
-) => {
+const findPostulantesPorDNI = (id,{ onSuccess, onNotFound, onError }) => {
   models.postulantes
     .findOne({
       include: [
-        {
-          as: "Tipo_documento",
-          model: models.tipos_documentos,
-          attributes: ["id", "tipo_documento"],
-        },
         {
           as: "Usuario",
           model: models.usuarios,
@@ -180,17 +137,12 @@ const findPostulantesPorDNI = (
         {
           as: "Estudios",
           model: models.estudios,
-          attributes: ["id", "nombre_estudio", "estado_estudio"],
+          attributes: ["id", "nombre_estudio_estado"],
         },
         {
           as: "Carrera",
           model: models.carreras,
           attributes: ["id", "nombre_carrera"],
-        },
-        {
-          as: "Estado",
-          model: models.estado_postulantes,
-          attributes: ["id", "nombre_estado"],
         },
         {
           as: "Provincia",
@@ -202,6 +154,18 @@ const findPostulantesPorDNI = (
           model: models.ciudades,
           attributes: ["id", "nombre", "fk_id_provincia"],
         },
+        {
+          as: "Idiomas",
+          model: models.idiomas_postulantes,
+          attributes: ["id"],
+          include: [
+            {
+              as: "Idiomas del postulante",
+              model: models.idiomas,
+              attributes: ["id", "nombre_idioma", "nivel_oral", "nivel_escrito"],
+            },
+          ],
+        }
       ],
 
       where: { id },
@@ -215,7 +179,7 @@ const findPostulantesPorDNI = (
 export const getPorId = async (req, res) => {
   findPostulantesPorDNI(req.params.id, {
     onSuccess: (postulantes) => res.send(postulantes),
-    onNotFound: () => res.sendStatus(401),
+    onNotFound: () => res.sendStatus(404),
     onError: () => res.sendStatus(400),
   });
 };
@@ -224,11 +188,11 @@ export const postPostulante = async (req, res) => {
   models.postulantes
     .create({
       id: req.body.documento,
-      fk_id_tipo_documento: req.body.tipoDocumento,
+      tipo_documento: req.body.tipoDocumento,
       fk_id_usuario: req.body.idUsuario,
       fk_id_estudios: req.body.estudios,
       fk_id_carrera: req.body.carrera,
-      fk_id_estado: req.body.estado,
+      estado: req.body.estado,
       nombre: req.body.nombre,
       apellido: req.body.apellido,
       nacionalidad: req.body.nacionalidad,
@@ -245,8 +209,8 @@ export const postPostulante = async (req, res) => {
       cant_materias: req.body.cantMaterias,
       alumno_unahur: req.body.alumnoUnahur,
       presentacion: req.body.presentacion,
-      cv: "",
-      foto: "",
+      cv: req.body.cv,
+      foto: req.body.foto,
     })
     .then(
       (postulantes) => res.status(201).send({ id: postulantes.id }),
@@ -293,11 +257,11 @@ export const updatePostulante = async (req, res) => {
   postulantes
       .update(
         {
-          fk_id_tipo_documento: req.body.tipoDocumento,
+          tipo_documento: req.body.tipoDocumento,
           fk_id_usuario: req.body.idUsuario,
           fk_id_estudios: req.body.estudios,
           fk_id_carrera: req.body.carrera,
-          fk_id_estado: req.body.estado,
+          estado: req.body.estado,
           nombre: req.body.nombre,
           apellido: req.body.apellido,
           nacionalidad: req.body.nacionalidad,
@@ -314,8 +278,10 @@ export const updatePostulante = async (req, res) => {
           cant_materias: req.body.cantMaterias,
           alumno_unahur: req.body.alumnoUnahur,
           presentacion: req.body.presentacion,
+          cv: req.body.cv,
+          foto: req.body.foto
         },
-          { fields: ["fk_id_tipo_documento", "fk_id_usuario","fk_id_estudios","fk_id_carrera","fk_id_estado","nombre","apellido","nacionalidad","fecha_nac","pais","fk_id_provincia","fk_id_ciudad","calle","nro","piso","depto","cp","telefono","cant_materias","alumno_unahur","presentacion"] }
+          { fields: ["tipo_documento", "fk_id_usuario","fk_id_estudios","fk_id_carrera","estado","nombre","apellido","nacionalidad","fecha_nac","pais","fk_id_provincia","fk_id_ciudad","calle","nro","piso","depto","cp","telefono","cant_materias","alumno_unahur","presentacion","cv","foto"] }
       )
       .then(() => res.sendStatus(200))
       .catch((error) => {

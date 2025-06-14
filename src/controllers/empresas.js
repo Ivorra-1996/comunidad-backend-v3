@@ -1,14 +1,12 @@
 const models = require("../../database/models");
-const { Op } = require("sequelize");
+const { Op: sequelize } = require("sequelize");
 
-
-//get de empresas
 export const getConFiltros = async (req, res) => {
   let paginaComoNumero = Number.parseInt(req.query.pagina);
   let limiteComoNumero = Number.parseInt(req.query.limite);
   let ordenarPor = req.query.ordenar;
   let nombreEmpresa = req.query.nombreEmpresa;
-  let idEstado = req.query.idEstado;
+  let estado = req.query.estado;
 
   let pagina = 0;
   if (!Number.isNaN(paginaComoNumero) && paginaComoNumero > 0) {
@@ -29,8 +27,8 @@ export const getConFiltros = async (req, res) => {
     nombreEmpresa = req.query.nombreEmpresa.replace(/\s/g, "%");
   }
 
-  if (typeof idEstado === "undefined") {
-    idEstado = 1;
+  if (typeof estado === "undefined") {
+    estado = "Activo";
  }
 
   models.empresas
@@ -49,11 +47,6 @@ export const getConFiltros = async (req, res) => {
           attributes: ["id", "nombre_rubro"],
         },
         {
-          as: "Estado",
-          model: models.estado_empresas,
-          attributes: ["id", "nombre_estado"],
-        },
-        {
           as: "Provincia",
           model: models.provincias,
           attributes: ["id", "nombre"],
@@ -65,13 +58,13 @@ export const getConFiltros = async (req, res) => {
         },
       ],
       where: {
-        [Op.and]: [
+        [sequelize.and]: [
           {
             nombre_empresa: {
-              [Op.iLike]: `%${nombreEmpresa}%`,
+              [sequelize.iLike]: `%${nombreEmpresa}%`,
             },
-            fk_id_estado: {
-              [Op.eq]: idEstado
+            estado: {
+              [sequelize.eq]: estado
             },
           },
         ],
@@ -84,12 +77,21 @@ export const getConFiltros = async (req, res) => {
         totalPaginas: Math.ceil(empresas.count / limite),
       })
     )
-    .catch(() => res.sendStatus(500));
+    .catch((error) => res.status(500).send(error));
 };
 
-export const getPeladas = async (req, res) => {
-  let pagina = 0;
-  let limite = 1000;
+export const getEmpresas = async (req, res) => {
+  let pagina = Number.parseInt(req.query.pagina);
+  let limite = Number.parseInt(req.query.limite);
+
+  if (!pagina) {
+    pagina = 0;
+  }
+
+  if (!limite) {
+    // Si limite no se proporciona, traer todas las empresas
+    limite = 1000;
+  }
 
   models.empresas
     .findAndCountAll({
@@ -105,11 +107,6 @@ export const getPeladas = async (req, res) => {
           as: "Rubro",
           model: models.rubros,
           attributes: ["id", "nombre_rubro"],
-        },
-        {
-          as: "Estado",
-          model: models.estado_empresas,
-          attributes: ["id", "nombre_estado"],
         },
         {
           as: "Provincia",
@@ -147,11 +144,6 @@ const findEmpresas= (id, { onSuccess, onNotFound, onError }) => {
           attributes: ["id", "nombre_rubro"],
         },
         {
-          as: "Estado",
-          model: models.estado_empresas,
-          attributes: ["id", "nombre_estado"],
-        },
-        {
           as: "Provincia",
           model: models.provincias,
           attributes: ["id", "nombre"],
@@ -163,6 +155,9 @@ const findEmpresas= (id, { onSuccess, onNotFound, onError }) => {
         },
       ],
       where: { id },
+      attributes: {
+        exclude: ["createdAt", "updatedAt"], // Excluir createdAt y updatedAt
+      },
     })
     .then((empresas) => (empresas ? onSuccess(empresas) : onNotFound()))
     .catch(() => onError());
@@ -191,11 +186,6 @@ const findEmpresasPorIdUsuario = (fk_id_usuario, { onSuccess, onNotFound, onErro
           attributes: ["id", "nombre_rubro"],
         },
         {
-          as: "Estado",
-          model: models.estado_empresas,
-          attributes: ["id", "nombre_estado"],
-        },
-        {
           as: "Provincia",
           model: models.provincias,
           attributes: ["id", "nombre"],
@@ -207,6 +197,9 @@ const findEmpresasPorIdUsuario = (fk_id_usuario, { onSuccess, onNotFound, onErro
         },
       ],
       where: { fk_id_usuario },
+      attributes: {
+        exclude: ["createdAt", "updatedAt"], // Excluir createdAt y updatedAt
+      },
     })
     .then((empresas) => (empresas ? onSuccess(empresas) : onNotFound()))
     .catch(() => onError());
@@ -239,7 +232,7 @@ export const postEmpresa = async (req, res) => {
       id:  req.body.cuit,
       fk_id_usuario: req.body.idUsuario,     
       fk_id_rubro: req.body.idRubro,          
-      fk_id_estado: 2,         
+      estado: "Observado",         
       nombre_empresa: req.body.nombreEmpresa,       
       descripcion: req.body.descripcion,          
       pais: req.body.pais,                
@@ -276,7 +269,7 @@ export const updateEmpresa = async (req, res) => {
         {
           fk_id_usuario: req.body.idUsuario,     
           fk_id_rubro: req.body.idRubro,          
-          fk_id_estado: req.body.idEstado,         
+          estado: req.body.estado,         
           nombre_empresa: req.body.nombreEmpresa,       
           descripcion: req.body.descripcion,          
           pais: req.body.pais,                
@@ -290,9 +283,10 @@ export const updateEmpresa = async (req, res) => {
           telefono: req.body.telefono,             
           web: req.body.web,                  
           nombre_representante: req.body.nombreRepresentante, 
-          email_representante: req.body.emailRepresentante, 
+          email_representante: req.body.emailRepresentante,
+          logo: req.body.logo, 
         },
-        { fields: ["fk_id_usuario", "fk_id_rubro", "fk_id_estado","nombre_empresa","descripcion","pais","fk_id_provincia","descripcion","fk_id_ciudad","calle","nro","piso","depto","cp","telefono","web","nombre_representante","email_representante"] }
+        { fields: ["fk_id_usuario", "fk_id_rubro", "estado","nombre_empresa","descripcion","pais","fk_id_provincia","descripcion","fk_id_ciudad","calle","nro","piso","depto","cp","telefono","web","nombre_representante","email_representante","logo"] }
       )
       .then(() => res.sendStatus(200)
       )
@@ -321,9 +315,9 @@ export const patchEmpresa = async (req, res) => {
   empresas
       .update(
         {          
-          fk_id_estado: 1,
+          estado: "Activo",
         },
-        { fields: ["fk_id_estado"] }
+        { fields: ["estado"] }
       ).then(() => res.sendStatus(200),
       changeGroup(empresas.fk_id_usuario),
       console.log(empresas.fk_id_usuario)

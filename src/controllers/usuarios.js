@@ -12,6 +12,7 @@ export const signUp = async (req, res) => {
   //Nos traemos el usuario desde el body
   const usuario = await req.body.usuario;
   const password = await req.body.password;
+  const tipoGrupo = await req.body.grupo;
 
   //Obtenemos el largo de la password
   const passwordLength = password.length;
@@ -23,13 +24,30 @@ export const signUp = async (req, res) => {
   //largo de contraseña
   const minPasswordLength = 6;
 
+  //Buscamos si existe el usuario en la base
+  const findUsuarioHabilitado = await models.usuarios.findOne({
+    where: { usuario: usuario, estado: true },
+  });
+  if (findUsuarioHabilitado !== null) {
+    return (res.status(402).send("Bad request: El usuario ya existe"));
+  };
+
+
+  const findUsuarioInhabilitado = await models.usuarios.findOne({
+    where: { usuario: usuario, estado: false },
+  });
+
+  if (findUsuarioInhabilitado !== null) {
+    return (res.status(200).send({id : findUsuarioInhabilitado.id}));
+  };
+  
   //Luego de algunas validaciones insertamos el usuario en la tabla o devolvemos un error.
   if (passwordLength >= minPasswordLength) {
     models.usuarios
       .create({
         usuario: usuario,
         password: hashPassword,
-        fk_id_grupo: "1",
+        fk_id_grupo: tipoGrupo,
         estado: "0",
       })
       .then((usuarios) => res.status(201).send({ id: usuarios.id }))
@@ -58,6 +76,7 @@ export const signIn = async (req, res) => {
   const findUsuario = await models.usuarios.findOne({
     where: { usuario: usuario },
   });
+  
   //Si el usuario existe validamos, sino devolvemos error
   if (findUsuario !== null) {
     //Si el hash de la password matchea con la que paso el usuario damos ok, sino error.
@@ -121,9 +140,20 @@ const findUsuarioPorId = (id, { onSuccess, onNotFound, onError }) => {
     .catch(() => onError());
 };
 
+export const getUserId = (req, res) => {
+  const onSuccess = (usuario) => res.json(usuario);
+
+  findUsuarioPorId(req.params.id, {
+    onSuccess,
+    onNotFound: () => res.sendStatus(404),
+    onError: () => res.sendStatus(500),
+  });
+};
+
+
 export const deleteUsuario = async (req, res) => {
-  const onSuccess = postulaciones =>
-  postulaciones
+  const onSuccess = usuarios =>
+  usuarios
       .destroy()
       .then(() => res.sendStatus(200))
       .catch(() => res.sendStatus(500));
@@ -131,5 +161,60 @@ export const deleteUsuario = async (req, res) => {
     onSuccess,
     onNotFound: () => res.sendStatus(404),
     onError: () => res.sendStatus(500)
+  });
+};
+
+export const updateUsuariobyId = async (req, res) => {
+  const onSuccess = (usuario) =>
+    usuario
+      .update({
+        usuario: req.body.usuario,
+      })
+      .then(() => res.sendStatus(200))
+      .catch((error) => {
+        if (error.name === "SequelizeUniqueConstraintError") {
+          res.status(400).send("Bad request: Algun tipo de error de validacion de campos");
+        } else {
+          console.log(`Error al intentar actualizar la base de datos: ${error}`);
+          res.sendStatus(500);
+        }
+      });
+
+  findUsuarioPorId(req.params.id, {
+    onSuccess,
+    onNotFound: () => res.sendStatus(404),
+    onError: () => res.sendStatus(500),
+  });
+};
+
+const findUsuarioPorEmail = (usuario, { onSuccess, onNotFound, onError }) => {
+  models.usuarios
+    .findOne({
+      where: { usuario: usuario },
+    })
+    .then((usuarios) => (usuarios ? onSuccess(usuarios) : onNotFound()))
+    .catch(() => onError());
+};
+
+export const updateUsuarioByMail = async (req, res) => {
+  const onSuccess = (usuario) =>
+    usuario
+      .update({
+        usuario: req.body.usuario,
+      })
+      .then(() => res.sendStatus(200))
+      .catch((error) => {
+        if (error.name === "SequelizeUniqueConstraintError") {
+          res.status(400).send("Bad request: Algun tipo de error de validacion de campos");
+        } else {
+          console.log(`Error al intentar actualizar la base de datos: ${error}`);
+          res.sendStatus(500);
+        }
+      });
+
+    findUsuarioPorEmail(req.params.usuario, {
+    onSuccess,
+    onNotFound: () => res.sendStatus(404),
+    onError: () => res.sendStatus(500),
   });
 };
